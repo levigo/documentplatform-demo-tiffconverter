@@ -1,0 +1,55 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.levigo</groupId>
+		<artifactId>levigo-oss-parent</artifactId>
+		<version>1</version>
+	</parent>
+
+	<groupId>org.levigo.jadice.documentplatform</groupId>
+	<artifactId>documentplatform-demo-tiffconverter</artifactId>
+	<version>1.0-SNAPSHOT</version>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.levigo.jadice.documentplatform</groupId>
+			<artifactId>jadice-documentplatform-all</artifactId>
+			<version>5.1.0.3</version>
+		</dependency>
+		<dependency>
+			<groupId>com.levigo.jadice.documentplatform</groupId>
+			<artifactId>jadice-addon-tiffconverter</artifactId>
+			<version>5.1.0.3</version>
+			<exclusions>
+				<!-- Excluding everything here, as all dependencies that we need, are 
+					contained in jadice-documentplatform-all -->
+				<exclusion>
+					<groupId>*</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		
+		<!-- To make layouting the components easier, we're using miglayout in this project -->
+		<dependency>
+			<groupId>com.miglayout</groupId>
+			<artifactId>miglayout-swing</artifactId>
+			<version>4.2</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
