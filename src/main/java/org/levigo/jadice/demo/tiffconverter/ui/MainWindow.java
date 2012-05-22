@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,7 +15,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -28,7 +28,6 @@ import org.levigo.jadice.demo.tiffconverter.ui.jobtree.JobOverviewTree;
 
 import com.levigo.jadice.document.BasicDocument;
 import com.levigo.jadice.document.UIDocument;
-import com.levigo.jadice.document.util.I18N;
 import com.levigo.jadice.swing.dnd.CompositeImportHandler;
 import com.levigo.jadice.swing.dnd.ImportHandler;
 import com.levigo.jadice.swing.thumbnailview.PageSorter;
@@ -71,13 +70,22 @@ public class MainWindow extends JFrame {
   private final JLabel pageSorterHeaderLabel;
   private final JLabel jobOverviewTreeHeaderLabel;
   private final JLabel headerLabel;
+  private final JLabel targetDirectoryTitleLabel;
+  private final JLabel targetDirectoryLabel;
+  private final JLabel legendEnqueuedLabel;
+  private final JLabel legendErrorLabel;
+  private final JLabel legendFinishedLabel;
+  private final JLabel legendRunningLabel;
+  private final JLabel legendHeaderLabel;
+  private final JButton targetDirectorySelectButton;
+  private final JButton targetDirectoryOpenButton;
 
   public MainWindow(JobController controller) {
     if (controller == null)
       throw new IllegalArgumentException("controller must not be null");
-    
+
     setTitle(Main.I18N_RES.getString("application.title"));
-    
+
     this.controller = controller;
 
     // our "root" panel that will hold all components.
@@ -105,6 +113,24 @@ public class MainWindow extends JFrame {
     pageSorterHeaderLabel = UIUtils.createHeader2Label(Main.I18N_RES.getString("application.header.doccomposition"));
     jobOverviewTreeHeaderLabel = UIUtils.createHeader2Label(Main.I18N_RES.getString("application.header.jobstatus"));
 
+    targetDirectoryTitleLabel = UIUtils.createLabel(Main.I18N_RES.getString("label.targetdir"));
+    targetDirectoryLabel = UIUtils.createLabel("");
+
+    targetDirectorySelectButton = new JButton(ACTION_FACTORY.getAction(context, "SelectTargetDirectory"));
+    targetDirectorySelectButton.setHideActionText(true);
+    targetDirectoryOpenButton = new JButton(ACTION_FACTORY.getAction(context, "OpenTargetDirectory"));
+    targetDirectoryOpenButton.setHideActionText(true);
+
+    legendEnqueuedLabel = UIUtils.createLabel(UIUtils.ICONS.getIcon("icon.job.enqueued"),
+        Main.I18N_RES.getString("label.legend.enqueued"));
+    legendErrorLabel = UIUtils.createLabel(UIUtils.ICONS.getIcon("icon.job.error"),
+        Main.I18N_RES.getString("label.legend.error"));
+    legendFinishedLabel = UIUtils.createLabel(UIUtils.ICONS.getIcon("icon.job.finished"),
+        Main.I18N_RES.getString("label.legend.finished"));
+    legendRunningLabel = UIUtils.createLabel(UIUtils.ICONS.getIcon("icon.job.running"),
+        Main.I18N_RES.getString("label.legend.running"));
+
+    legendHeaderLabel = UIUtils.createLabel(Main.I18N_RES.getString("label.legend.header"));
 
     // add objects used by the commands to the context
     context.add(this);
@@ -134,26 +160,26 @@ public class MainWindow extends JFrame {
 
       private void applyNameToDocument() {
         pageSorter.getThumbnailView().getDocument().setName(documentNameTextField.getText());
-        
+
         context.contextChanged();
       }
-      
+
       @Override
       public void removeUpdate(DocumentEvent e) {
         applyNameToDocument();
       }
-      
+
       @Override
       public void insertUpdate(DocumentEvent e) {
         applyNameToDocument();
       }
-      
+
       @Override
       public void changedUpdate(DocumentEvent e) {
         applyNameToDocument();
       }
     });
-    
+
     // to ensure that the root node of the will be expanded once a job has been enqueued, we're
     // forcing the tree to open the root node when we've been informed.
     controller.addJobListener(new JobAdapter() {
@@ -167,13 +193,42 @@ public class MainWindow extends JFrame {
         });
       }
     });
-    
+
     // initially set a document into which the pages will be inserted.
     pageSorter.getThumbnailView().setDocument(new BasicDocument(""));
 
     configureThumbnailView(pageSorter.getThumbnailView());
 
+    // if the target directory is changed, update the label.
+    controller.addPropertyChangeListener("targetDirectory", new PropertyChangeListener() {
+      @Override
+      public void propertyChange(PropertyChangeEvent evt) {
+        SwingUtilities.invokeLater(new Runnable() {
+          @Override
+          public void run() {
+            updateTargetDirectoryLabel();
+          }
+        });
+      }
+    });
+    
+    updateTargetDirectoryLabel();
+    
     pack();
+  }
+
+  protected void updateTargetDirectoryLabel() {
+
+    File targetDirectory = controller.getTargetDirectory();
+
+    if (targetDirectory == null) {
+      targetDirectoryLabel.setText(Main.I18N_RES.getString("label.targetdir.tempdir"));
+    } else {
+      targetDirectoryLabel.setText("<html><b>" + targetDirectory.getName() + "</b> ("
+          + targetDirectory.getParentFile().getAbsolutePath() + ")</html>");
+    }
+
+
   }
 
   protected void configureThumbnailView(ThumbnailView thumbnailView) {
@@ -232,21 +287,33 @@ public class MainWindow extends JFrame {
 
   protected void layoutComponents() {
 
-    contentPanel.setLayout(new MigLayout("", "[min:250px, pref:500px, grow, fill][][270px, fill]", "[][][grow,fill][]"));
+    contentPanel.setLayout(new MigLayout("", "[min:250px, pref:500px, grow, fill][][270px, fill]", "[][][][]"));
 
     contentPanel.add(headerLabel, "span 3,wrap");
     contentPanel.add(pageSorterHeaderLabel);
     contentPanel.add(jobOverviewTreeHeaderLabel, "skip, wrap");
 
-    contentPanel.add(pageSorter, "spany 4, height 400px");
+    contentPanel.add(pageSorter, "spany 11, height 400px, growy");
 
     contentPanel.add(arrowLabel);
-    contentPanel.add(jobOverviewTree, "spany 4, wrap");
+    contentPanel.add(jobOverviewTree, "spany 4, push, growy, wrap");
 
     contentPanel.add(documentNameLabel, "wrap");
     contentPanel.add(documentNameTextField, "grow, split");
     contentPanel.add(new JLabel("*"), "wrap");
     contentPanel.add(createTaskButton, "wrap, gapbottom 30px");
+
+    contentPanel.add(targetDirectoryTitleLabel, "skip 2, wrap");
+    contentPanel.add(targetDirectoryLabel, "skip 2, grow, split 3");
+    contentPanel.add(targetDirectoryOpenButton);
+    contentPanel.add(targetDirectorySelectButton, "wrap");
+
+    // legend section
+    contentPanel.add(legendHeaderLabel, "skip 2, gaptop 10px, wrap");
+    contentPanel.add(legendEnqueuedLabel, "skip 2, wrap");
+    contentPanel.add(legendRunningLabel, "skip 2, wrap");
+    contentPanel.add(legendFinishedLabel, "skip 2, wrap");
+    contentPanel.add(legendErrorLabel, "skip 2, wrap");
 
     contentPanel.add(thumbnailSizeLabel, "split 4, grow");
     contentPanel.add(smallThumbnailsButton, "sg");
@@ -259,42 +326,4 @@ public class MainWindow extends JFrame {
     return controller;
   }
 
-  public static void main(String[] args) {
-
-    try {
-      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-    } catch (Exception e) {
-      // should not happen. Ignoring if it does.
-    }
-
-    SwingUtilities.invokeLater(new Runnable() {
-      public void run() {
-        MainWindow mw = new MainWindow(new JobController());
-        mw.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        mw.setVisible(true);
-      }
-    });
-
-
-    // try {
-    // genImage(16, 16, 5, 5, 6, 6, new File("small-icon.png"));
-    // genImage(16, 16, 4, 4, 8, 8, new File("normal-icon.png"));
-    // genImage(16, 16, 2, 2, 12, 12, new File("large-icon.png"));
-    // } catch (IOException e) {
-    // // TODO Auto-generated catch block
-    // e.printStackTrace();
-    // }
-
-  }
-  //
-  // private static void genImage(int w, int h, int x, int y, int rectW, int rectH, File f) throws
-  // IOException {
-  // BufferedImage bi = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-  // Graphics2D g2d = bi.createGraphics();
-  // g2d.setColor(Color.GRAY);
-  // g2d.fillRect(x, y, rectW, rectH);
-  // g2d.dispose();
-  //
-  // ImageIO.write(bi, "PNG", f);
-  // }
 }

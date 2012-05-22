@@ -1,5 +1,7 @@
 package org.levigo.jadice.demo.tiffconverter.controller;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -20,8 +22,10 @@ public class JobController {
   private final TaskExecutor<Job> executor;
   private final EventList<Job> jobList;
   private final CopyOnWriteArrayList<JobListener> jobListeners;
+  private final PropertyChangeSupport propertyChangeSupport;
 
   public JobController() {
+    propertyChangeSupport = new PropertyChangeSupport(this);
     jobListeners = new CopyOnWriteArrayList<JobListener>();
     executor = ThreadPoolTaskService.getDefault().getExecutor(new TaskScope<Job>() {
 
@@ -40,6 +44,8 @@ public class JobController {
       }
     });
     jobList = new BasicEventList<Job>();
+
+    targetDirectory = new File(System.getProperty("user.home"));
   }
 
   public File getTargetDirectory() {
@@ -47,7 +53,7 @@ public class JobController {
   }
 
   public void setTargetDirectory(File targetDirectory) {
-    this.targetDirectory = targetDirectory;
+    propertyChangeSupport.firePropertyChange("targetDirectory", this.targetDirectory, this.targetDirectory = targetDirectory);
   }
 
   public void enqueue(Document document) {
@@ -74,7 +80,7 @@ public class JobController {
     }
     fireJobEnqueued(job);
     executor.execute(new ConvertDocumentTask(job));
-    
+
   }
 
   public EventList<Job> getJobList() {
@@ -112,4 +118,29 @@ public class JobController {
       listener.jobFailed(this, job);
     }
   }
+
+  public void addPropertyChangeListener(PropertyChangeListener listener) {
+    if (listener == null)
+      throw new IllegalArgumentException("listener must not be null");
+    propertyChangeSupport.addPropertyChangeListener(listener);
+  }
+
+  public void removePropertyChangeListener(PropertyChangeListener listener) {
+    if (listener == null)
+      throw new IllegalArgumentException("listener must not be null");
+    propertyChangeSupport.removePropertyChangeListener(listener);
+  }
+
+  public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener) {
+    if (listener == null)
+      throw new IllegalArgumentException("listener must not be null");
+    propertyChangeSupport.addPropertyChangeListener(propertyName, listener);
+  }
+
+  public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener) {
+    if (listener == null)
+      throw new IllegalArgumentException("listener must not be null");
+    propertyChangeSupport.removePropertyChangeListener(propertyName, listener);
+  }
+
 }

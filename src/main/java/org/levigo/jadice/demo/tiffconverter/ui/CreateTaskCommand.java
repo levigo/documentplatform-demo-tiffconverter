@@ -62,6 +62,7 @@ public class CreateTaskCommand extends InjectedCommand {
 
     Document doc = thumbnailView.getDocument();
     thumbnailView.setDocument(new BasicDocument(""));
+    thumbnailView.getSelectionModel().clearSelection();
 
     controller.enqueue(doc);
   }

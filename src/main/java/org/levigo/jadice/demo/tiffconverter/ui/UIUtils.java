@@ -2,6 +2,7 @@ package org.levigo.jadice.demo.tiffconverter.ui;
 
 import java.awt.Font;
 
+import javax.swing.Icon;
 import javax.swing.JLabel;
 
 import com.levigo.util.swing.IconManager;
@@ -26,8 +27,15 @@ public class UIUtils {
     return label;
   }
 
+  public static JLabel createLabel(Icon icon, String text) {
+    JLabel l = new JLabel(text);
+    if (icon != null)
+      l.setIcon(icon);
+    return l;
+
+  }
   public static JLabel createLabel(String text) {
-    return new JLabel(text);
+    return createLabel(null, text);
   }
 
 }
